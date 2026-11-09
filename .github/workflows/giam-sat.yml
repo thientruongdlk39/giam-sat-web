@@ -3,7 +3,8 @@ name: Giám sát web
 # Cài ngày 09/11/2026. Danh sách địa chỉ + khoá Telegram: Settings → Secrets and variables → Actions (DANH_SACH_URL, TG_BOT_TOKEN, TG_CHAT_ID).
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    # 09/11/2026: lệch sang phút 4 (:04, :14, …). Lịch cũ "*/10" chưa chạy lần nào sau khi tạo kho; GitHub hay trễ/bỏ lượt ở phút 00.
+    - cron: "4-59/10 * * * *"
   workflow_dispatch:
     inputs:
       thu:
@@ -24,12 +25,17 @@ jobs:
       - name: Lấy trạng thái lần trước
         uses: actions/cache/restore@v4
         with:
-          path: trang-thai.txt
+          path: |
+            trang-thai.txt
+            danh-sach.enc
           key: trang-thai-${{ github.run_id }}
           restore-keys: trang-thai-
       - name: Kiểm các web
         env:
           DANH_SACH_URL: ${{ secrets.DANH_SACH_URL }}
+          # 09/11/2026: danh sách động từ Trung tâm (web mới tự được canh) — xem đầu kiem.sh
+          NGUON_DANH_SACH: ${{ secrets.NGUON_DANH_SACH }}
+          GIAM_SAT_KHOA: ${{ secrets.GIAM_SAT_KHOA }}
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
           THU: ${{ inputs.thu || false }}
@@ -38,7 +44,9 @@ jobs:
         if: always()
         uses: actions/cache/save@v4
         with:
-          path: trang-thai.txt
+          path: |
+            trang-thai.txt
+            danh-sach.enc
           key: trang-thai-${{ github.run_id }}
       - name: Giữ lịch chạy (GitHub tự tắt lịch của kho không có hoạt động 60 ngày)
         if: always()
