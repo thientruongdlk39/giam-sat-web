@@ -10,8 +10,27 @@ gui() {
 }
 GIO=$(TZ=Asia/Ho_Chi_Minh date '+%H:%M %d/%m/%Y')
 read -r TT_CU DEM_CU < <(cat trang-thai.txt 2>/dev/null || echo "ok 0")
+
+# 09/11/2026 — DANH SÁCH ĐỘNG: lấy các web đang chạy từ Trung tâm (secret NGUON_DANH_SACH + khoá GIAM_SAT_KHOA) → web mới tạo tự được canh.
+# Lấy được thì lưu bản MÃ HOÁ (danh-sach.enc, khoá GIAM_SAT_KHOA) vào bộ nhớ đệm; Trung tâm không trả lời (máy chủ sập) thì dùng bản lần trước.
+# Luôn cộng thêm DANH_SACH_URL (danh sách cố định cũ). Không in địa chỉ nào ra nhật ký: kho công khai, ai cũng xem được nhật ký.
+DONG=""; NGUON="cố định"
+if [ -n "${NGUON_DANH_SACH:-}" ] && [ -n "${GIAM_SAT_KHOA:-}" ]; then
+  if DONG=$(curl -sf --max-time 20 -A "giam-sat-ttm" -H "Authorization: Bearer ${GIAM_SAT_KHOA}" "$NGUON_DANH_SACH") && [ -n "$DONG" ]; then
+    printf '%s\n' "$DONG" | openssl enc -aes-256-cbc -pbkdf2 -salt -pass env:GIAM_SAT_KHOA -out danh-sach.enc 2>/dev/null || true
+    NGUON="Trung tâm"
+  else
+    DONG=$(openssl enc -d -aes-256-cbc -pbkdf2 -pass env:GIAM_SAT_KHOA -in danh-sach.enc 2>/dev/null || true)
+    NGUON="bản lưu lần trước (Trung tâm không trả lời)"
+  fi
+fi
+# Chỉ nhận dòng dạng https://tên-miền/ — bỏ mọi thứ lạ (trang lỗi, HTML…)
+DS=$(printf '%s\n%s\n' "${DANH_SACH_URL:-}" "$DONG" | tr ' \t' '\n\n' | grep -E '^https?://[A-Za-z0-9.-]+(/[A-Za-z0-9._~/-]*)?$' | sed -E 's#^(https?://[^/]+)$#\1/#' | sort -u || true)
+for u in $DS; do echo "::add-mask::$u"; echo "::add-mask::${u#https://}"; done
+echo "Danh sách: $(printf '%s\n' "$DS" | grep -c . ) địa chỉ · nguồn bổ sung: $NGUON"
+
 HONG=""; SO_TOT=0; TONG=0
-for u in ${DANH_SACH_URL:-}; do
+for u in $DS; do
   TONG=$((TONG + 1)); ma=000
   for lan in 1 2 3; do
     ma=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -A "Mozilla/5.0 (giam-sat-ttm)" "$u" || true)
