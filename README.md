@@ -10,3 +10,7 @@ Web không vào được thì báo Telegram ngay, nhắc lại mỗi khoảng 30
 - GitHub tự tắt lịch của kho công khai không có hoạt động 60 ngày; bước cuối của quy trình tự ghi một dòng sau 45 ngày để giữ lịch.
 
 Cài ngày 09/11/2026 (rà soát ttmnetwork.com, mục A5).
+
+**09/11/2026 — danh sách tự cập nhật:** ngoài `DANH_SACH_URL`, mỗi lần chạy lấy thêm các web đang chạy từ Trung tâm điều hành
+(secret `NGUON_DANH_SACH` = địa chỉ API, `GIAM_SAT_KHOA` = khoá truy cập). Web mới tạo trong Trung tâm tự được canh, không phải sửa secret.
+Trung tâm không trả lời (máy chủ sập) → dùng danh sách lần trước, lưu **mã hoá** trong bộ nhớ đệm của Actions. Lịch chạy phút 4, 14, 24… mỗi giờ.
